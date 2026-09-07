@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سوقك - نيالا | شارع السينما</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif; }
+body { background:#f3f3f3; color:#111; }
+
+.top-bar {
+  background: linear-gradient(90deg, #131921, #232f3e);
+  color:#fff; padding:10px 20px;
+  display:flex; align-items:center; gap:15px; flex-wrap:wrap;
+  position:sticky; top:0; z-index:100;
+}
+.logo { font-size:26px; font-weight:bold; color:#ff9900; cursor:pointer; }
+.logo i { color:#fff; }
+.location-badge {
+  background:rgba(255,255,255,.1); padding:5px 12px; border-radius:20px;
+  font-size:12px; display:flex; align-items:center; gap:5px;
+}
+.location-badge i { color:#ff9900; }
+.search-box { flex:1; display:flex; min-width:200px; }
+.search-box select { padding:10px; border:none; background:#e6e6e6; border-radius:4px 0 0 4px; cursor:pointer; }
+.search-box input { flex:1; padding:10px; border:none; font-size:15px; }
+.search-box button { background:#febd69; border:none; padding:0 15px; border-radius:0 4px 4px 0; cursor:pointer; font-size:18px; }
+.top-actions { display:flex; gap:15px; align-items:center; }
+.top-actions > div { cursor:pointer; font-size:14px; }
+.top-actions > div small { display:block; color:#ccc; }
+.cart-icon { position:relative; font-size:22px; }
+.cart-count { position:absolute; top:-8px; left:-8px; background:#f08804; color:#fff; border-radius:50%; width:22px; height:22px; font-size:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; }
+.admin-btn { background:#cc0c39 !important; padding:5px 12px; border-radius:20px; font-size:12px; }
+
+.categories-bar {
+  background:#37475a; color:#fff; padding:8px 20px;
+  display:flex; gap:15px; overflow-x:auto;
+}
+.categories-bar div { cursor:pointer; white-space:nowrap; padding:5px 10px; border-radius:4px; transition:.3s; }
+.categories-bar div:hover, .categories-bar div.active { background:#ff9900; }
+
+.hero {
+  background: linear-gradient(135deg, #232f3e 0%, #232f3e 50%, #ff9900 150%);
+  color:#fff; padding:40px 20px; text-align:center; position:relative; overflow:hidden;
+}
+.hero h1 { font-size:32px; margin-bottom:10px; }
+.hero p { font-size:16px; opacity:.9; }
+.hero .location-tag {
+  display:inline-block; background:rgba(255,255,255,.15); padding:8px 20px;
+  border-radius:20px; margin-top:15px;
+}
+
+.container { display:flex; gap:20px; padding:20px; max-width:1400px; margin:auto; }
+.main-content { flex:3; }
+.side-panel { flex:1; min-width:300px; }
+
+.category-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:15px; margin-bottom:25px; }
+.cat-card {
+  background:#fff; padding:15px; border-radius:8px; cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.08); transition:.3s;
+}
+.cat-card:hover { transform:translateY(-5px); box-shadow:0 6px 15px rgba(0,0,0,.15); }
+.cat-card h3 { margin-bottom:8px; color:#232f3e; font-size:15px; }
+.cat-card .cat-img { font-size:40px; text-align:center; margin:8px 0; }
+.cat-card a { color:#007185; font-size:13px; }
+
+.section-title { font-size:20px; margin:20px 0 15px; color:#232f3e; border-right:4px solid #ff9900; padding-right:10px; }
+.products-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:15px; }
+.product-card {
+  background:#fff; border-radius:8px; padding:12px;
+  box-shadow:0 2px 6px rgba(0,0,0,.08); transition:.3s; position:relative;
+}
+.product-card:hover { transform:translateY(-3px); box-shadow:0 6px 15px rgba(0,0,0,.15); }
+.product-img { font-size:60px; text-align:center; padding:15px 0; background:#fafafa; border-radius:6px; }
+.product-name { font-size:14px; margin:8px 0; min-height:36px; }
+.product-rating { color:#ffa41c; font-size:13px; }
+.product-rating span { color:#007185; margin-right:5px; font-size:12px; }
+.product-price { font-size:18px; color:#b12704; font-weight:bold; }
+.product-old-price { text-decoration:line-through; color:#888; font-size:12px; }
+.product-delivery { font-size:11px; color:#565959; margin:4px 0; }
+.btn-add {
+  width:100%; background:#ffd814; border:1px solid #fcd200;
+  padding:7px; border-radius:20px; cursor:pointer; font-weight:bold; margin-top:8px; font-size:13px;
+}
+.btn-add:hover { background:#f7ca00; }
+.badge { position:absolute; top:8px; right:8px; background:#cc0c39; color:#fff; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:bold; }
+.badge.new { background:#067d62; }
+
+.side-panel {
+  background:#fff; border-radius:8px; padding:15px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08); position:sticky; top:70px; height:fit-content;
+}
+.delivery-info { background:#eff7f7; padding:12px; border-radius:6px; margin-bottom:12px; border-right:3px solid #007185; }
+.delivery-info h4 { color:#007185; margin-bottom:5px; font-size:14px; }
+#map { height:280px; border-radius:6px; margin:10px 0; }
+.address-input { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:8px; font-size:13px; }
+.btn-update { width:100%; background:#ffd814; border:1px solid #fcd200; padding:8px; border-radius:20px; cursor:pointer; font-weight:bold; font-size:13px; }
+
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; justify-content:center; align-items:center; }
+.modal.active { display:flex; }
+.modal-content { background:#fff; width:92%; max-width:600px; max-height:85vh; overflow-y:auto; border-radius:10px; padding:20px; position:relative; }
+.modal-content.large { max-width:850px; }
+.close-btn { position:absolute; top:10px; left:15px; font-size:24px; cursor:pointer; background:none; border:none; color:#888; }
+
+.cart-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid #eee; align-items:center; }
+.cart-item .item-img { font-size:35px; width:50px; text-align:center; }
+.cart-item .item-info { flex:1; }
+.cart-item .item-info h4 { font-size:14px; }
+.cart-item .item-info p { color:#b12704; font-weight:bold; font-size:13px; }
+.qty-controls { display:flex; align-items:center; gap:6px; }
+.qty-controls button { width:26px; height:26px; border:1px solid #ccc; background:#f0f0f0; cursor:pointer; border-radius:4px; }
+.cart-total { text-align:left; padding:12px 0; font-size:16px; border-top:2px solid #232f3e; margin-top:10px; }
+.btn-checkout { width:100%; background:#ffd814; border:1px solid #fcd200; padding:12px; border-radius:20px; cursor:pointer; font-weight:bold; font-size:16px; margin-top:10px; }
+.empty-cart { text-align:center; padding:40px; color:#888; }
+
+/* ====== لوحة تحكم المدير ====== */
+.admin-login { text-align:center; padding:40px; }
+.admin-login input { padding:12px 20px; border:2px solid #ddd; border-radius:8px; font-size:16px; width:250px; text-align:center; }
+.admin-login button { padding:12px 30px; background:#232f3e; color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:16px; margin-top:10px; }
+
+.admin-stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:15px; margin:20px 0; }
+.stat-card { background:linear-gradient(135deg, #232f3e, #37475a); color:#fff; padding:20px; border-radius:10px; text-align:center; }
+.stat-card .num { font-size:32px; font-weight:bold; color:#ff9900; }
+.stat-card .label { font-size:13px; margin-top:5px; opacity:.8; }
+.stat-card.green { background:linear-gradient(135deg, #067d62, #0a9e7a); }
+.stat-card.blue { background:linear-gradient(135deg, #007185, #0099b3); }
+.stat-card.red { background:linear-gradient(135deg, #b12704, #cc3311); }
+
+.admin-order {
+  background:#fff; border:2px solid #eee; border-radius:10px; padding:15px;
+  margin-bottom:12px; transition:.2s;
+}
+.admin-order:hover { border-color:#ff9900; }
+.admin-order-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.admin-order-header h4 { color:#232f3e; }
+.admin-order .status { padding:4px 12px; border-radius:20px; font-size:12px; font-weight:bold; }
+.status.new-order { background:#fff3cd; color:#856404; animation: blink 1s infinite; }
+.status.preparing { background:#cce7ff; color:#004085; }
+.status.onway { background:#d4edda; color:#155724; }
+.status.delivered { background:#e6f4ea; color:#067d62; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.5;} }
+
+.admin-order-items { background:#f8f8f8; padding:10px; border-radius:6px; margin:8px 0; font-size:13px; }
+.admin-order-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.admin-order-actions button {
+  padding:6px 14px; border:none; border-radius:20px; cursor:pointer;
+  font-size:12px; font-weight:bold; color:#fff;
+}
+.btn-whatsapp { background:#25d366; }
+.btn-call-customer { background:#007185; }
+.btn-accept { background:#067d62; }
+.btn-deliver { background:#ff9900; }
+.btn-done { background:#232f3e; }
+
+.admin-order .customer-info { font-size:13px; color:#555; margin:5px 0; }
+.admin-order .customer-info i { color:#ff9900; width:20px; }
+
+.sound-toggle { position:fixed; bottom:20px; left:20px; z-index:999; background:#232f3e; color:#fff; width:50px; height:50px; border-radius:50%; border:none; cursor:pointer; font-size:20px; box-shadow:0 4px 15px rgba(0,0,0,.3); }
+
+/* ====== تتبع الطلب ====== */
+.tracking-header { text-align:center; padding:20px; background:linear-gradient(135deg, #067d62, #007185); color:#fff; border-radius:8px; margin-bottom:20px; }
+.tracking-steps { display:flex; justify-content:space-between; margin:25px 0; position:relative; }
+.tracking-steps::before { content:''; position:absolute; top:20px; right:10%; left:10%; height:3px; background:#e0e0e0; }
+.tracking-steps .progress-bar { position:absolute; top:20px; right:10%; height:3px; background:#067d62; transition: width 1s; }
+.step { position:relative; z-index:2; text-align:center; flex:1; }
+.step .icon { width:40px; height:40px; border-radius:50%; background:#e0e0e0; color:#888; display:flex; align-items:center; justify-content:center; margin:0 auto 6px; font-size:16px; }
+.step.active .icon, .step.done .icon { background:#067d62; color:#fff; }
+.step .label { font-size:11px; color:#666; }
+.step.active .label, .step.done .label { color:#067d62; font-weight:bold; }
+.tracking-map { height:300px; border-radius:8px; margin:15px 0; }
+.driver-info { background:#f8f8f8; padding:12px; border-radius:8px; display:flex; align-items:center; gap:12px; margin:12px 0; }
+.driver-avatar { width:50px; height:50px; border-radius:50%; background:#ff9900; color:#fff; display:flex; align-items:center; justify-content:center; font-size:20px; }
+.eta-box { background:#fff8e1; border-right:4px solid #ff9900; padding:12px; border-radius:6px; text-align:center; margin:12px 0; }
+.eta-box .time { font-size:28px; color:#b12704; font-weight:bold; }
+
+.order-card { background:#fff; border:1px solid #eee; border-radius:8px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+.order-card:hover { box-shadow:0 4px 12px rgba(0,0,0,.1); }
+
+.toast { position:fixed; bottom:30px; right:30px; background:#067d62; color:#fff; padding:15px 25px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,.2); transform:translateX(400px); transition:.4s; z-index:2000; }
+.toast.show { transform:translateX(0); }
+.toast.error { background:#b12704; }
+.toast.info { background:#007185; }
+
+footer { background:#232f3e; color:#fff; padding:25px 20px; margin-top:40px; text-align:center; }
+footer .foot-links { display:flex; justify-content:center; gap:25px; flex-wrap:wrap; margin-bottom:12px; }
+footer a { color:#ddd; text-decoration:none; }
+
+@media (max-width: 900px) {
+  .container { flex-direction:column; }
+  .side-panel { position:static; }
+  .hero h1 { font-size:24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ====== الشريط العلوي ====== -->
+<div class="top-bar">
+  <div class="logo" onclick="showAll()"><i class="fas fa-store"></i> سوقك</div>
+  <div class="location-badge"><i class="fas fa-location-dot"></i> نيالا - شارع السينما</div>
+  <div class="search-box">
+    <select id="searchCategory">
+      <option value="all">الكل</option>
+      <option value="food">مواد غذائية</option>
+      <option value="veg">خضروات</option>
+      <option value="meat">لحوم</option>
+      <option value="fast">وجبات سريعة</option>
+    </select>
+    <input type="text" id="searchInput" placeholder="ابحث في سوقك...">
+    <button onclick="searchProducts()"><i class="fas fa-search"></i></button>
+  </div>
+  <div class="top-actions">
+    <div onclick="openOrders()"><small>طلباتي</small><b><i class="fas fa-box"></i> الطلبات</b></div>
+    <div class="cart-icon" onclick="openCart()">
+      <i class="fas fa-shopping-cart"></i>
+      <span class="cart-count" id="cartCount">0</span>
+      <b>السلة</b>
+    </div>
+    <div class="admin-btn" onclick="openAdmin()">
+      <i class="fas fa-lock"></i> المدير
+    </div>
+  </div>
+</div>
+
+<!-- ====== شريط الفئات ====== -->
+<div class="categories-bar">
+  <div class="active" onclick="filterCategory('all', this)">🏠 الرئيسية</div>
+  <div onclick="filterCategory('food', this)">🍞 مواد غذائية</div>
+  <div onclick="filterCategory('veg', this)">🥬 خضروات</div>
+  <div onclick="filterCategory('meat', this)">🥩 لحوم</div>
+  <div onclick="filterCategory('fast', this)">🍔 وجبات سريعة</div>
+  <div onclick="filterCategory('offers', this)">🔥 عروض</div>
+</div>
+
+<!-- ====== البانر ====== -->
+<div class="hero">
+  <h1>🎉 تسوق بذكاء، استلم بسرعة!</h1>
+  <p>توصيل خلال 30 دقيقة - نيالا شارع السينما 🇸🇩</p>
+  <div class="location-tag"><i class="fas fa-map-marker-alt"></i> فرعنا: نيالا - شارع السينما</div>
+</div>
+
+<!-- ====== المحتوى ====== -->
+<div class="container">
+  <div class="main-content">
+    <div class="category-cards">
+      <div class="cat-card" onclick="filterCategory('food')"><h3>مواد غذائية</h3><div class="cat-img">🍞🥛🧀</div><a>تسوق الآن ←</a></div>
+      <div class="cat-card" onclick="filterCategory('veg')"><h3>خضروات طازجة</h3><div class="cat-img">🥬🥕🍅</div><a>تسوق الآن ←</a></div>
+      <div class="cat-card" onclick="filterCategory('meat')"><h3>لحوم ودواجن</h3><div class="cat-img">🥩🍗🐟</div><a>تسوق الآن ←</a></div>
+      <div class="cat-card" onclick="filterCategory('fast')"><h3>وجبات سريعة</h3><div class="cat-img">🍔🍟🍕</div><a>اطلب الآن ←</a></div>
+    </div>
+    <h2 class="section-title" id="productsTitle">⭐ منتجات مميزة</h2>
+    <div class="products-grid" id="productsGrid"></div>
+  </div>
+
+  <div class="side-panel">
+    <div class="delivery-info">
+      <h4><i class="fas fa-truck-fast"></i> التوصيل</h4>
+      <p id="currentAddress">📍 نيالا - وسط المدينة</p>
+      <p style="margin-top:4px;"><i class="fas fa-clock"></i> <b id="deliveryTime">20-35 دقيقة</b></p>
+    </div>
+    <input type="text" class="address-input" id="addressInput" placeholder="أدخل عنوانك في نيالا...">
+    <button class="btn-update" onclick="updateDelivery()"><i class="fas fa-location-dot"></i> تحديث الموقع</button>
+    <div id="map"></div>
+  </div>
+</div>
+
+<!-- ====== Modal السلة ====== -->
+<div class="modal" id="cartModal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeCart()">&times;</button>
+    <h2 style="border-bottom:2px solid #ff9900; padding-bottom:10px;">🛒 سلة التسوق</h2>
+    <div id="cartItems"></div>
+    <div class="cart-total" id="cartTotal"></div>
+    <button class="btn-checkout" onclick="checkout()"><i class="fas fa-lock"></i> إتمام الشراء</button>
+  </div>
+</div>
+
+<!-- ====== Modal تتبع ====== -->
+<div class="modal" id="trackingModal">
+  <div class="modal-content large">
+    <button class="close-btn" onclick="closeTracking()">&times;</button>
+    <div id="trackingContent"></div>
+  </div>
+</div>
+
+<!-- ====== Modal طلبات المستخدم ====== -->
+<div class="modal" id="ordersModal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeOrders()">&times;</button>
+    <h2 style="border-bottom:2px solid #ff9900; padding-bottom:10px;">📦 طلباتي</h2>
+    <div id="ordersList"></div>
+  </div>
+</div>
+
+<!-- ====== Modal لوحة تحكم المدير ====== -->
+<div class="modal" id="adminModal">
+  <div class="modal-content large">
+    <button class="close-btn" onclick="closeAdmin()">&times;</button>
+    <div id="adminContent"></div>
+  </div>
+</div>
+
+<!-- زر الصوت -->
+<button class="sound-toggle" id="soundToggle" onclick="toggleSound()" title="تشغيل/إيقاف صوت التنبيه">
+  <i class="fas fa-volume-up"></i>
+</button>
+
+<footer>
+  <div class="foot-links">
+    <a>من نحن</a> <a>الشروط</a> <a>الخصوصية</a> <a>المساعدة</a> <a>اتصل بنا</a>
+  </div>
+  <p>📍 نيالا - شارع السينما | 📞 +249 000 000 000</p>
+  <p>© 2026 سوقك 🇸🇩</p>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ================================================================
+// ⚙️ إعدادات المدير - غيّر هذه الأرقام لأرقامك الحقيقية
+// ================================================================
+const ADMIN_CONFIG = {
+  password: "1234",              // كلمة سر لوحة التحكم
+  whatsappNumber: "249912345678", // رقم واتسابك (بدون + أو مسافات)
+  telegramBotToken: "",           // توكن بوت تيليجرام (اتركه فارغ إذا ما تبي)
+  telegramChatId: "",             // آي دي محادثتك في تيليجرام
+  storeName: "سوقك - نيالا",
+  storePhone: "+249 000 000 000"
+};
+
+let soundEnabled = true;
+
+// ================================================================
+// 📦 بيانات المنتجات (20 صنف مواد غذائية + باقي الفئات)
+// ================================================================
+const products = [
+  // مواد غذائية (20 صنف)
+  {id:1, name:"أرز بسمتي 5 كجم", cat:"food", price:120, old:150, img:"🍚", rating:4.5, reviews:1240, offer:true},
+  {id:2, name:"زيت عباد شمس 1.8 لتر", cat:"food", price:85, old:95, img:"🫒", rating:4.3, reviews:890},
+  {id:3, name:"سكر أبيض 1 كجم", cat:"food", price:35, img:"🍬", rating:4.6, reviews:540},
+  {id:4, name:"حليب طازج 1 لتر", cat:"food", price:25, img:"🥛", rating:4.7, reviews:2100, offer:true},
+  {id:5, name:"خبز أبيض طازج", cat:"food", price:15, img:"🍞", rating:4.4, reviews:670},
+  {id:6, name:"جبنة بيضاء 500 جم", cat:"food", price:60, old:75, img:"🧀", rating:4.5, reviews:430},
+  {id:7, name:"دقيق قمح 2 كجم", cat:"food", price:45, img:"🌾", rating:4.6, reviews:780, isNew:true},
+  {id:8, name:"بيض بلدي 30 حبة", cat:"food", price:90, old:110, img:"🥚", rating:4.8, reviews:1560, offer:true},
+  {id:9, name:"شاي أحمر 250 جم", cat:"food", price:55, img:"🍵", rating:4.7, reviews:2340},
+  {id:10, name:"قهوة سودانية 200 جم", cat:"food", price:75, img:"☕", rating:4.9, reviews:1890, isNew:true},
+  {id:11, name:"عسل طبيعي 500 جم", cat:"food", price:180, old:220, img:"🍯", rating:4.8, reviews:670, offer:true},
+  {id:12, name:"تمر سوداني 1 كجم", cat:"food", price:95, img:"🌴", rating:4.7, reviews:1230, isNew:true},
+  {id:13, name:"فول مدمس 400 جم", cat:"food", price:25, img:"🫘", rating:4.5, reviews:890},
+  {id:14, name:"عدس أحمر 500 جم", cat:"food", price:40, img:"🟠", rating:4.4, reviews:540},
+  {id:15, name:"معجون طماطم 400 جم", cat:"food", price:30, img:"🥫", rating:4.3, reviews:720},
+  {id:16, name:"مكرونة 500 جم", cat:"food", price:20, img:"🍝", rating:4.5, reviews:1100},
+  {id:17, name:"زبدة 250 جم", cat:"food", price:50, old:65, img:"🧈", rating:4.6, reviews:450, offer:true},
+  {id:18, name:"لبن رايب 1 لتر", cat:"food", price:35, img:"🥛", rating:4.7, reviews:890, isNew:true},
+  {id:19, name:"تونة معلبة 160 جم", cat:"food", price:45, img:"🐟", rating:4.5, reviews:670},
+  {id:20, name:"مربى فراولة 350 جم", cat:"food", price:55, img:"🍓", rating:4.6, reviews:340},
+  // خضروات
+  {id:21, name:"طماطم طازجة 1 كجم", cat:"veg", price:18, img:"🍅", rating:4.6, reviews:1500},
+  {id:22, name:"خيار بلدي 1 كجم", cat:"veg", price:20, img:"🥒", rating:4.5, reviews:980, offer:true},
+  {id:23, name:"جزر 1 كجم", cat:"veg", price:15, img:"🥕", rating:4.4, reviews:620},
+  {id:24, name:"بطاطس 2 كجم", cat:"veg", price:25, old:30, img:"🥔", rating:4.5, reviews:1100},
+  {id:25, name:"بصل أحمر 1 كجم", cat:"veg", price:12, img:"🧅", rating:4.3, reviews:750},
+  {id:26, name:"خس طازج", cat:"veg", price:10, img:"🥬", rating:4.6, reviews:420},
+  {id:27, name:"فلفل أخضر 1 كجم", cat:"veg", price:22, img:"🫑", rating:4.5, reviews:560},
+  {id:28, name:"باذنجان 1 كجم", cat:"veg", price:16, img:"🍆", rating:4.4, reviews:380},
+  // لحوم
+  {id:29, name:"لحم بقري 1 كجم", cat:"meat", price:320, old:380, img:"🥩", rating:4.8, reviews:2300, offer:true},
+  {id:30, name:"دجاج بلدي كامل", cat:"meat", price:110, img:"🍗", rating:4.7, reviews:1800},
+  {id:31, name:"سمك بلطي 1 كجم", cat:"meat", price:90, img:"🐟", rating:4.5, reviews:920},
+  {id:32, name:"لحم ضأن 1 كجم", cat:"meat", price:420, img:"🍖", rating:4.9, reviews:670},
+  {id:33, name:"جمبري 500 جم", cat:"meat", price:180, old:220, img:"🦐", rating:4.6, reviews:540, offer:true},
+  // وجبات سريعة
+  {id:34, name:"برجر لحم مزدوج", cat:"fast", price:75, old:95, img:"🍔", rating:4.7, reviews:3200, offer:true},
+  {id:35, name:"بيتزا مارغريتا", cat:"fast", price:90, img:"🍕", rating:4.6, reviews:2100},
+  {id:36, name:"بطاطس مقلية كبيرة", cat:"fast", price:35, img:"🍟", rating:4.5, reviews:1800},
+  {id:37, name:"شاورما دجاج", cat:"fast", price:55, old:70, img:"🌯", rating:4.8, reviews:4500, offer:true},
+  {id:38, name:"ساندويتش فراخ مشوية", cat:"fast", price:65, img:"🥪", rating:4.6, reviews:1200},
+  {id:39, name:"كولا 330 مل", cat:"fast", price:12, img:"🥤", rating:4.4, reviews:900},
+  {id:40, name:"فول سوداني محمص", cat:"fast", price:25, img:"🥜", rating:4.7, reviews:1450}
+];
+
+let cart = [];
+let orders = JSON.parse(localStorage.getItem('souqak_orders') || '[]');
+let adminLoggedIn = false;
+const storeLocation = [13.4559, 25.2493]; // نيالا - شارع السينما
+let userLocation = [13.4580, 25.2520];
+let map, marker, routeLine;
+
+// ================================================================
+// 🎵 صوت التنبيه عند طلب جديد
+// ================================================================
+function playNotificationSound() {
+  if (!soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.15);
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+  } catch(e) {}
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  document.getElementById('soundToggle').innerHTML = soundEnabled
+    ? '<i class="fas fa-volume-up"></i>'
+    : '<i class="fas fa-volume-mute"></i>';
+  showToast(soundEnabled ? '🔊 تم تشغيل الصوت' : '🔇 تم كتم الصوت', 'info');
+}
+
+// ================================================================
+// 📲 إرسال الطلب عبر واتساب
+// ================================================================
+function sendToWhatsApp(order) {
+  let msg = `🛒 *طلب جديد من ${ADMIN_CONFIG.storeName}!*\n\n`;
+  msg += `📋 رقم الطلب: ${order.id}\n`;
+  msg += `👤 اسم العميل: ${order.customerName}\n`;
+  msg += `📞 هاتف العميل: ${order.customerPhone}\n`;
+  msg += `📍 العنوان: ${order.customerAddress}\n\n`;
+  msg += `📦 *تفاصيل الطلب:*\n`;
+  order.items.forEach(i => {
+    msg += `  • ${i.name} × ${i.qty} = ${i.price * i.qty} ج.س\n`;
+  });
+  msg += `\n💰 *الإجمالي: ${order.total} ج.س*\n`;
+  msg += `🕐 الوقت: ${order.date}\n`;
+  msg += `\n⚡ *الرجاء تأكيد الطلب!*`;
+
+  const url = `https://wa.me/${ADMIN_CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
+
+// ================================================================
+// ✈️ إرسال الطلب عبر تيليجرام
+// ================================================================
+async function sendToTelegram(order) {
+  if (!ADMIN_CONFIG.telegramBotToken || !ADMIN_CONFIG.telegramChatId) return;
+
+  let msg = `🛒 <b>طلب جديد!</b>\n\n`;
+  msg += `📋 رقم: ${order.id}\n`;
+  msg += `👤 العميل: ${order.customerName}\n`;
+  msg += `📞 الهاتف: ${order.customerPhone}\n`;
+  msg += `📍 العنوان: ${order.customerAddress}\n\n`;
+  msg += `📦 <b>المنتجات:</b>\n`;
+  order.items.forEach(i => {
+    msg += `  • ${i.name} × ${i.qty} = ${i.price * i.qty} ج.س\n`;
+  });
+  msg += `\n💰 <b>الإجمالي: ${order.total} ج.س</b>`;
+
+  try {
+    await fetch(`https://api.telegram.org/bot${ADMIN_CONFIG.telegramBotToken}/sendMessage`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        chat_id: ADMIN_CONFIG.telegramChatId,
+        text: msg,
+        parse_mode: 'HTML'
+      })
+    });
+  } catch(e) { console.log('Telegram error:', e); }
+}
+
+// ================================================================
+// 📦 عرض المنتجات
+// ================================================================
+function renderProducts(list) {
+  const grid = document.getElementById('productsGrid');
+  if (!list.length) {
+    grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:40px; color:#888;">لا توجد منتجات 🔍</p>';
+    return;
+  }
+  grid.innerHTML = list.map(p => `
+    <div class="product-card">
+      ${p.offer ? '<span class="badge">عرض</span>' : ''}
+      ${p.isNew ? '<span class="badge new">جديد</span>' : ''}
+      <div class="product-img">${p.img}</div>
+      <div class="product-name">${p.name}</div>
+      <div class="product-rating">${'★'.repeat(Math.floor(p.rating))}${'☆'.repeat(5-Math.floor(p.rating))} <span>(${p.reviews})</span></div>
+      <div class="product-price">${p.price} ج.س ${p.old ? `<span class="product-old-price">${p.old}</span>` : ''}</div>
+      <div class="product-delivery"><i class="fas fa-truck"></i> توصيل خلال 30 دقيقة</div>
+      <button class="btn-add" onclick="addToCart(${p.id})"><i class="fas fa-cart-plus"></i> أضف للسلة</button>
+    </div>
+  `).join('');
+}
+
+function filterCategory(cat, el) {
+  document.querySelectorAll('.categories-bar div').forEach(d => d.classList.remove('active'));
+  if (el) el.classList.add('active');
+  let filtered, title;
+  if (cat === 'all') { filtered = products; title = '⭐ منتجات مميزة'; }
+  else if (cat === 'offers') { filtered = products.filter(p => p.offer); title = '🔥 عروض اليوم'; }
+  else {
+    filtered = products.filter(p => p.cat === cat);
+    title = {food:'🍞 مواد غذائية', veg:'🥬 خضروات', meat:'🥩 لحوم', fast:'🍔 وجبات سريعة'}[cat];
+  }
+  document.getElementById('productsTitle').textContent = title;
+  renderProducts(filtered);
+}
+
+function showAll() { filterCategory('all', document.querySelector('.categories-bar div')); }
+
+function searchProducts() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const cat = document.getElementById('searchCategory').value;
+  let list = products;
+  if (cat !== 'all') list = list.filter(p => p.cat === cat);
+  if (q) list = list.filter(p => p.name.toLowerCase().includes(q));
+  document.getElementById('productsTitle').textContent = `🔍 نتائج (${list.length})`;
+  renderProducts(list);
+}
+document.getElementById('searchInput').addEventListener('keyup', e => { if (e.key === 'Enter') searchProducts(); });
+
+// ================================================================
+// 🛒 السلة
+// ================================================================
+function addToCart(id) {
+  const p = products.find(x => x.id === id);
+  const existing = cart.find(x => x.id === id);
+  if (existing) existing.qty++; else cart.push({...p, qty:1});
+  document.getElementById('cartCount').textContent = cart.reduce((s,i) => s+i.qty, 0);
+  showToast(`✅ "${p.name}" أُضيف للسلة`);
+}
+
+function openCart() {
+  const items = document.getElementById('cartItems');
+  const total = document.getElementById('cartTotal');
+  if (!cart.length) {
+    items.innerHTML = '<div class="empty-cart"><i class="fas fa-cart-arrow-down" style="font-size:50px; color:#ccc;"></i><p style="margin-top:10px;">سلتك فارغة!</p></div>';
+    total.innerHTML = '';
+  } else {
+    items.innerHTML = cart.map(i => `
+      <div class="cart-item">
+        <div class="item-img">${i.img}</div>
+        <div class="item-info"><h4>${i.name}</h4><p>${i.price} × ${i.qty} = ${i.price*i.qty} ج.س</p></div>
+        <div class="qty-controls">
+          <button onclick="changeQty(${i.id},-1)">-</button><b>${i.qty}</b><button onclick="changeQty(${i.id},1)">+</button>
+        </div>
+        <button onclick="removeItem(${i.id})" style="background:none; border:none; color:#b12704; cursor:pointer;"><i class="fas fa-trash"></i></button>
+      </div>
+    `).join('');
+    const sum = cart.reduce((s,i) => s+i.price*i.qty, 0);
+    const ship = sum > 200 ? 0 : 25;
+    total.innerHTML = `المجموع: ${sum} ج.س<br>الشحن: ${ship===0?'<span style="color:#067d62;">مجاني ✓</span>':ship+' ج.س'}<br><span style="color:#b12704; font-size:22px;">الإجمالي: ${sum+ship} ج.س</span>`;
+  }
+  document.getElementById('cartModal').classList.add('active');
+}
+function closeCart() { document.getElementById('cartModal').classList.remove('active'); }
+function changeQty(id, d) { const i = cart.find(x=>x.id===id); i.qty+=d; if(i.qty<=0) cart=cart.filter(x=>x.id!==id); document.getElementById('cartCount').textContent=cart.reduce((s,i)=>s+i.qty,0); openCart(); }
+function removeItem(id) { cart=cart.filter(x=>x.id!==id); document.getElementById('cartCount').textContent=cart.reduce((s,i)=>s+i.qty,0); openCart(); }
+
+// ================================================================
+// ✅ إتمام الشراء - هنا يحدث السحر!
+// ================================================================
+function checkout() {
+  if (!cart.length) { showToast('⚠️ السلة فارغة!', 'error'); return; }
+
+  // 1️⃣ نطلب معلومات العميل
+  const customerName = prompt('👤 أدخل اسمك الكامل:');
+  if (!customerName) return;
+  const customerPhone = prompt('📞 أدخل رقم هاتفك:');
+  if (!customerPhone) return;
+  const customerAddress = prompt('📍 أدخل عنوانك بالتفصيل (مثال: نيالا - حي الموردة - شارع 5):');
+  if (!customerAddress) return;
+
+  const sum = cart.reduce((s,i) => s+i.price*i.qty, 0);
+  const ship = sum > 200 ? 0 : 25;
+
+  const order = {
+    id: 'ORD' + Date.now(),
+    items: [...cart],
+    total: sum + ship,
+    status: 'new', // new -> preparing -> onway -> delivered
+    date: new Date().toLocaleString('ar-EG'),
+    customerName,
+    customerPhone,
+    customerAddress,
+    customerLocation: [...userLocation],
+    currentStep: 0,
+    eta: 30
+  };
+
+  orders.unshift(order);
+  localStorage.setItem('souqak_orders', JSON.stringify(orders));
+
+  // 2️⃣ إرسال إشعار واتساب لصاحب المتجر
+  sendToWhatsApp(order);
+
+  // 3️⃣ إرسال إشعار تيليجرام لصاحب المتجر
+  sendToTelegram(order);
+
+  // 4️⃣ تشغيل صوت التنبيه
+  playNotificationSound();
+
+  cart = [];
+  document.getElementById('cartCount').textContent = 0;
+  closeCart();
+  showToast('🎉 تم تأكيد طلبك! سنتواصل معك قريباً');
+  setTimeout(() => openTracking(order.id), 1000);
+  simulateOrderProgress(order.id);
+}
+
+// ================================================================
+// 📍 محاكاة تقدم الطلب
+// ================================================================
+function simulateOrderProgress(orderId) {
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return;
+  setTimeout(() => { order.status='preparing'; order.currentStep=1; order.eta=20; saveOrders(); updateTrackingIfOpen(orderId); }, 8000);
+  setTimeout(() => { order.status='onway'; order.currentStep=2; order.eta=10; saveOrders(); showToast('🚚 السائق في الطريق!', 'info'); updateTrackingIfOpen(orderId); }, 18000);
+  setTimeout(() => { order.status='delivered'; order.currentStep=3; order.eta=0; saveOrders(); showToast('✅ تم تسليم طلبك!', 'success'); updateTrackingIfOpen(orderId); }, 30000);
+}
+
+function saveOrders() { localStorage.setItem('souqak_orders', JSON.stringify(orders)); }
+
+function updateTrackingIfOpen(orderId) {
+  if (document.getElementById('trackingModal').classList.contains('active')) renderTracking(orderId);
+}
+
+// ================================================================
+// 📦 تتبع الطلب
+// ================================================================
+function openTracking(orderId) {
+  renderTracking(orderId);
+  document.getElementById('trackingModal').classList.add('active');
+}
+
+function renderTracking(orderId) {
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return;
+  const steps = [{icon:'fa-clipboard-check',label:'تم الطلب'},{icon:'fa-fire-burner',label:'قيد التحضير'},{icon:'fa-motorcycle',label:'في الطريق'},{icon:'fa-circle-check',label:'تم التسليم'}];
+  const progress = (order.currentStep / (steps.length-1)) * 80;
+
+  document.getElementById('trackingContent').innerHTML = `
+    <div class="tracking-header">
+      <h2>📦 تتبع طلبك</h2>
+      <div style="font-size:13px; opacity:.9;">رقم: ${order.id} | ${order.date}</div>
+    </div>
+    <div class="tracking-steps">
+      <div class="progress-bar" style="width:${progress}%;"></div>
+      ${steps.map((s,i) => `<div class="step ${i<order.currentStep?'done':''} ${i===order.currentStep?'active':''}"><div class="icon"><i class="fas ${s.icon}"></i></div><div class="label">${s.label}</div></div>`).join('')}
+    </div>
+    ${order.status!=='delivered' ? `<div class="eta-box"><div style="color:#666; font-size:13px;">الوقت المتوقع</div><div class="time">${order.eta} دقيقة</div></div>` : `<div class="eta-box" style="background:#e6f4ea; border-color:#067d62;"><div class="time" style="color:#067d62; font-size:20px;">✅ تم التسليم بنجاح!</div></div>`}
+    <div class="tracking-map" id="trackingMap"></div>
+    <div style="background:#f8f8f8; padding:12px; border-radius:8px; margin-top:12px;">
+      <h4 style="margin-bottom:8px;">📋 تفاصيل الطلب</h4>
+      ${order.items.map(i => `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #eee; font-size:13px;"><span>${i.img} ${i.name} × ${i.qty}</span><b>${i.price*i.qty} ج.س</b></div>`).join('')}
+      <div style="display:flex; justify-content:space-between; padding:8px 0 0; font-weight:bold; color:#b12704;"><span>الإجمالي:</span><span>${order.total} ج.س</span></div>
+    </div>
+  `;
+  setTimeout(() => initTrackingMap(order), 100);
+}
+
+function initTrackingMap(order) {
+  const el = document.getElementById('trackingMap');
+  if (!el) return;
+  const tMap = L.map('trackingMap').setView(storeLocation, 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM'}).addTo(tMap);
+  const sIcon = L.divIcon({html:'<div style="background:#ff9900; color:#fff; width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; border:3px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.3);">🏪</div>', className:'', iconSize:[35,35]});
+  L.marker(storeLocation, {icon:sIcon}).addTo(tMap).bindPopup('<b>سوقك</b><br>شارع السينما');
+  const uIcon = L.divIcon({html:'<div style="background:#067d62; color:#fff; width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; border:3px solid #fff;">🏠</div>', className:'', iconSize:[35,35]});
+  const cLoc = order.customerLocation || userLocation;
+  L.marker(cLoc, {icon:uIcon}).addTo(tMap).bindPopup('<b>موقع العميل</b>');
+  let dPos = order.status==='new'||order.status==='preparing' ? storeLocation : order.status==='onway' ? [(storeLocation[0]+cLoc[0])/2,(storeLocation[1]+cLoc[1])/2] : cLoc;
+  const dIcon = L.divIcon({html:'<div style="background:#007185; color:#fff; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; border:3px solid #fff;">🛵</div>', className:'', iconSize:[40,40]});
+  L.marker(dPos, {icon:dIcon}).addTo(tMap).bindPopup('<b>السائق</b>');
+  L.polyline([storeLocation, dPos, cLoc], {color:'#007185', weight:3, dashArray:'8,8'}).addTo(tMap);
+  tMap.fitBounds(L.latLngBounds([storeLocation, cLoc]), {padding:[40,40]});
+}
+
+function closeTracking() { document.getElementById('trackingModal').classList.remove('active'); }
+
+// ================================================================
+// 📦 طلبات المستخدم
+// ================================================================
+function openOrders() {
+  const list = document.getElementById('ordersList');
+  if (!orders.length) {
+    list.innerHTML = '<div class="empty-cart"><i class="fas fa-box-open" style="font-size:50px; color:#ccc;"></i><p style="margin-top:10px;">لا توجد طلبات</p></div>';
+  } else {
+    const st = {new:'طلب جديد', preparing:'قيد التحضير', onway:'في الطريق', delivered:'تم التسليم'};
+    list.innerHTML = orders.map(o => `
+      <div class="order-card" onclick="closeOrders(); openTracking('${o.id}')">
+        <div><h4>#${o.id.slice(-6)}</h4><p style="font-size:12px; color:#666;">${o.date}</p><p style="font-size:13px;"><b>${o.total} ج.س</b></p></div>
+        <span class="status ${o.status}">${st[o.status]}</span>
+      </div>
+    `).join('');
+  }
+  document.getElementById('ordersModal').classList.add('active');
+}
+function closeOrders() { document.getElementById('ordersModal').classList.remove('active'); }
+
+// ================================================================
+// 🔐 لوحة تحكم المدير
+// ================================================================
+function openAdmin() {
+  const content = document.getElementById('adminContent');
+  if (!adminLoggedIn) {
+    content.innerHTML = `
+      <div class="admin-login">
+        <h2><i class="fas fa-shield-halved"></i> لوحة تحكم المدير</h2>
+        <p style="color:#666; margin:15px 0;">أدخل كلمة السر للوصول</p>
+        <input type="password" id="adminPass" placeholder="كلمة السر" onkeyup="if(event.key==='Enter')loginAdmin()">
+        <br>
+        <button onclick="loginAdmin()"><i class="fas fa-unlock"></i> دخول</button>
+        <p style="margin-top:15px; font-size:12px; color:#999;">كلمة السر الافتراضية: 1234</p>
+      </div>
+    `;
+  } else {
+    renderAdminDashboard();
+  }
+  document.getElementById('adminModal').classList.add('active');
+}
+
+function loginAdmin() {
+  const pass = document.getElementById('adminPass').value;
+  if (pass === ADMIN_CONFIG.password) {
+    adminLoggedIn = true;
+    renderAdminDashboard();
+    showToast('✅ تم تسجيل الدخول بنجاح', 'success');
+  } else {
+    showToast('❌ كلمة السر خاطئة!', 'error');
+  }
+}
+
+function renderAdminDashboard() {
+  const content = document.getElementById('adminContent');
+  const newOrders = orders.filter(o => o.status === 'new').length;
+  const activeOrders = orders.filter(o => o.status !== 'delivered').length;
+  const totalRevenue = orders.filter(o => o.status === 'delivered').reduce((s,o) => s+o.total, 0);
+
+  content.innerHTML = `
+    <h2 style="border-bottom:2px solid #ff9900; padding-bottom:10px;">
+      <i class="fas fa-chart-line"></i> لوحة تحكم المدير
+      <button onclick="adminLoggedIn=false; closeAdmin();" style="float:left; background:#b12704; color:#fff; border:none; padding:5px 15px; border-radius:20px; cursor:pointer; font-size:12px;">خروج</button>
+    </h2>
+
+    <div class="admin-stats">
+      <div class="stat-card red"><div class="num">${newOrders}</div><div class="label">طلبات جديدة 🔔</div></div>
+      <div class="stat-card blue"><div class="num">${activeOrders}</div><div class="label">طلبات نشطة</div></div>
+      <div class="stat-card green"><div class="num">${orders.length}</div><div class="label">إجمالي الطلبات</div></div>
+      <div class="stat-card"><div class="num">${totalRevenue}</div><div class="label">الإيرادات (ج.س)</div></div>
+    </div>
+
+    <h3 style="margin:15px 0 10px;">📋 جميع الطلبات</h3>
+    <div id="adminOrdersList">
+      ${orders.length === 0 ? '<p style="text-align:center; color:#888; padding:20px;">لا توجد طلبات بعد</p>' :
+        orders.map(o => renderAdminOrder(o)).join('')
+      }
+    </div>
+
+    <div style="margin-top:20px; padding:15px; background:#f0f0f0; border-radius:8px;">
+      <h4 style="margin-bottom:10px;">⚙️ إعدادات الإشعارات</h4>
+      <p style="font-size:13px; color:#555;">
+        <b>واتساب:</b> ${ADMIN_CONFIG.whatsappNumber ? '✅ مفعّل' : '❌ غير مفعّل'}<br>
+        <b>تيليجرام:</b> ${ADMIN_CONFIG.telegramBotToken ? '✅ مفعّل' : '❌ غير مفعّل'}<br>
+        <b>رقم الواتساب:</b> ${ADMIN_CONFIG.whatsappNumber}<br>
+      </p>
+      <p style="font-size:12px; color:#888; margin-top:8px;">
+        💡 لتفعيل تيليجرام: غيّر <code>telegramBotToken</code> و <code>telegramChatId</code> في الكود
+      </p>
+    </div>
+  `;
+}
+
+function renderAdminOrder(o) {
+  const st = {new:'طلب جديد 🔔', preparing:'قيد التحضير', onway:'في الطريق 🚚', delivered:'تم التسليم ✅'};
+  return `
+    <div class="admin-order" id="adminOrder_${o.id}">
+      <div class="admin-order-header">
+        <h4>📋 #${o.id.slice(-6)} <span style="font-size:12px; color:#888;">${o.date}</span></h4>
+        <span class="status ${o.status}">${st[o.status]}</span>
+      </div>
+      <div class="customer-info">
+        <i class="fas fa-user"></i> ${o.customerName || 'غير محدد'}<br>
+        <i class="fas fa-phone"></i> ${o.customerPhone || 'غير محدد'}<br>
+        <i class="fas fa-location-dot"></i> ${o.customerAddress || 'غير محدد'}
+      </div>
+      <div class="admin-order-items">
+        ${o.items.map(i => `${i.img} ${i.name} × ${i.qty} = ${i.price*i.qty} ج.س`).join('<br>')}
+        <br><b style="color:#b12704;">الإجمالي: ${o.total} ج.س</b>
+      </div>
+      <div class="admin-order-actions">
+        ${o.status === 'new' ? `<button class="btn-accept" onclick="updateOrderStatus('${o.id}','preparing')"><i class="fas fa-check"></i> قبول وتحضير</button>` : ''}
+        ${o.status === 'preparing' ? `<button class="btn-deliver" onclick="updateOrderStatus('${o.id}','onway')"><i class="fas fa-motorcycle"></i> إرسال السائق</button>` : ''}
+        ${o.status === 'onway' ? `<button class="btn-done" onclick="updateOrderStatus('${o.id}','delivered')"><i class="fas fa-check-double"></i> تم التسليم</button>` : ''}
+        <button class="btn-whatsapp" onclick="contactCustomer('${o.customerPhone}')"><i class="fab fa-whatsapp"></i> واتساب العميل</button>
+        <button class="btn-call-customer" onclick="callCustomer('${o.customerPhone}')"><i class="fas fa-phone"></i> اتصل</button>
+        <button class="btn-call-customer" style="background:#6c757d;" onclick="openTracking('${o.id}'); closeAdmin();"><i class="fas fa-map"></i> تتبع</button>
+      </div>
+    </div>
+  `;
+}
+
+function updateOrderStatus(orderId, newStatus) {
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return;
+  order.status = newStatus;
+  const stepMap = {new:0, preparing:1, onway:2, delivered:3};
+  order.currentStep = stepMap[newStatus];
+  const etaMap = {new:30, preparing:20, onway:10, delivered:0};
+  order.eta = etaMap[newStatus];
+  saveOrders();
+  renderAdminDashboard();
+  playNotificationSound();
+
+  const msgs = {
+    preparing: '✅ تم قبول الطلب وجاري التحضير',
+    onway: '🚚 السائق في الطريق!',
+    delivered: '✅ تم تسليم الطلب بنجاح'
+  };
+  showToast(msgs[newStatus]);
+}
+
+function contactCustomer(phone) {
+  if (!phone) { showToast('⚠️ لا يوجد رقم هاتف', 'error'); return; }
+  const cleanPhone = phone.replace(/[^0-9+]/g, '').replace('+', '');
+  window.open(`https://wa.me/${cleanPhone}`, '_blank');
+}
+
+function callCustomer(phone) {
+  if (!phone) { showToast('⚠️ لا يوجد رقم هاتف', 'error'); return; }
+  window.open(`tel:${phone}`);
+}
+
+function closeAdmin() { document.getElementById('adminModal').classList.remove('active'); }
+
+// ================================================================
+// 🗺️ الخريطة
+// ================================================================
+function initMap() {
+  map = L.map('map').setView(userLocation, 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM'}).addTo(map);
+  const sIcon = L.divIcon({html:'<div style="background:#ff9900; color:#fff; width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; border:3px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.3);">🏪</div>', className:'', iconSize:[35,35]});
+  L.marker(storeLocation, {icon:sIcon}).addTo(map).bindPopup('<b>سوقك</b><br>نيالا - شارع السينما');
+  marker = L.marker(userLocation).addTo(map).bindPopup('📍 موقعك');
+  updateDeliveryTime();
+  map.on('click', function(e) {
+    userLocation = [e.latlng.lat, e.latlng.lng];
+    marker.setLatLng(userLocation);
+    document.getElementById('addressInput').value = `${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`;
+    updateDeliveryTime();
+  });
+}
+
+function distance(a,b,c,d) { const R=6371, dLat=(c-a)*Math.PI/180, dLon=(d-b)*Math.PI/180, x=Math.sin(dLat/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLon/2)**2; return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); }
+
+function updateDeliveryTime() {
+  const d = distance(storeLocation[0],storeLocation[1],userLocation[0],userLocation[1]);
+  const min = Math.max(15, Math.round((d/30)*60));
+  document.getElementById('deliveryTime').textContent = `${min}-${min+15} دقيقة (${(d*1000).toFixed(0)} م)`;
+  document.getElementById('currentAddress').textContent = `📍 على بعد ${(d*1000).toFixed(0)} م من المتجر`;
+  if (routeLine) map.removeLayer(routeLine);
+  routeLine = L.polyline([storeLocation, userLocation], {color:'#ff9900', weight:3, dashArray:'8,8'}).addTo(map);
+  map.fitBounds(routeLine.getBounds(), {padding:[30,30]});
+}
+
+function updateDelivery() {
+  const addr = document.getElementById('addressInput').value.trim();
+  if (!addr) { showToast('⚠️ أدخل عنوانك', 'error'); return; }
+  const coords = {'وسط المدينة':[13.458,25.252],'السوق الكبير':[13.455,25.248],'حي الموردة':[13.462,25.255],'حي السلام':[13.45,25.26],'الضعية':[13.445,25.24]};
+  let loc = null;
+  for (const k in coords) if (addr.includes(k)) { loc = coords[k]; break; }
+  if (!loc) loc = [13.45+Math.random()*.02, 25.24+Math.random()*.02];
+  userLocation = loc;
+  marker.setLatLng(userLocation);
+  updateDeliveryTime();
+  showToast('✅ تم تحديث الموقع');
+}
+
+// ================================================================
+// 🔔 إشعار
+// ================================================================
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ================================================================
+// 🚀 التشغيل
+// ================================================================
+window.addEventListener('load', () => {
+  renderProducts(products);
+  initMap();
+});
+// في الكود، غيّر هذا السطر:
+whatsappNumber: "919187012808"  // ← حط رقمك هنا
+</script>
+</body>
+</html>
